@@ -14,18 +14,18 @@ DIRECTORY = '../pqr/static/data/json/'
 client = MongoClient()
 db = client.test
 count = 0
-for root, dirs, files in os.walk(DIRECTORY): # This path to replace
+for root, dirs, files in os.walk(DIRECTORY):  # This path to replace
     for file in files:
-    	if count % 100 == 0:
-            print count
-        count+=1;
+        if count % 100 == 0:
+            print(count)
+        count += 1
 
         # print file
         json_file = open(DIRECTORY + file[:2] + "/" + file, "r")
         try:
             json_data = json.load(json_file)
         except ValueError:
-            print file
+            print(file)
 
         try:
             molecular_mass = json_data['molecular_mass']
@@ -36,19 +36,16 @@ for root, dirs, files in os.walk(DIRECTORY): # This path to replace
         except KeyError:
             inchi = ""
 
-        ##Creating a properties document
+        # Creating a properties document
         properties_id = db.properties.insert_one({
-        	"molecular_mass": molecular_mass,
-        	"inchi": inchi
-        }).inserted_id #Use this to link the molcules
+            "molecular_mass": molecular_mass,
+            "inchi": inchi
+        }).inserted_id  # Use this to link the molcules
 
+        # Mol2 File (Ignore for now)
 
-
-        ##Mol2 File (Ignore for now)
-
-
-        ##Creating a molcules document use the properties id to link
-        	##For now lets just have a link here to the mol2 data
+        # Creating a molcules document use the properties id to link
+        # For now lets just have a link here to the mol2 data
         try:
             inchikey = json_data['inchikey']
         except KeyError:
@@ -71,14 +68,14 @@ for root, dirs, files in os.walk(DIRECTORY): # This path to replace
             synonyms = []
 
         molecules_id = db.molecules.insert_one({
-        	"last_updated": datetime.now(),
-        	"properties_id": properties_id,
-        	"name": name,
+            "last_updated": datetime.now(),
+            "properties_id": properties_id,
+            "name": name,
             "inchikey": inchikey,
-        	"formula": formula,
+            "formula": formula,
             "tags": tags,
             "synonyms": synonyms
-        }).inserted_id #
+        }).inserted_id  #
 
         # pprint(data)
         json_file.close()
@@ -92,11 +89,11 @@ db.molecules.create_index([
     ("tags", "text"),
     ("synonyms", "text")
 ],
-weights={
-    "name": 50000,
-    "tags": 50,
-    "synonyms": 40,
-    "formula": 30,
-    "inchikey": 20
+    weights={
+        "name": 50000,
+        "tags": 50,
+        "synonyms": 40,
+        "formula": 30,
+        "inchikey": 20
     }
 )

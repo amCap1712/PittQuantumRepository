@@ -35,7 +35,7 @@ if len(bad_files_list) > 0:
     with open("bad_files.txt", "w") as out:
         out.write("\n".join(bad_files_list))
 
-print missing_formula_list
+print(missing_formula_list)
 
 if len(missing_formula_list) > 0:
     with open("missing_formula.txt", "w") as out:

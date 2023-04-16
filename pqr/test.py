@@ -1,12 +1,17 @@
 import cProfile
 import re
 import os
+
+from flask import flash
 from pymongo import MongoClient
 from htmlmin.minify import html_minify
-from settings import APP_JSON, APP_MOL2, APP_ARTICLES
+from .settings import APP_JSON, APP_MOL2, APP_ARTICLES
 from difflib import SequenceMatcher as SM
 import ujson as json
 from Levenshtein import ratio
+
+from .views import redirect_table
+
 #import json
 
 Masses = dict(H=1.01, He=4.00, Li=6.94, Be=9.01, B=10.81, C=12.01,
@@ -35,7 +40,7 @@ Masses = dict(H=1.01, He=4.00, Li=6.94, Be=9.01, B=10.81, C=12.01,
 def chunks(l, n):
     """ Yield successive n-sized chunks from l.
     """
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
 
 def similar(x, f, m0, query):
@@ -89,8 +94,7 @@ def browse(query="water", searchType="name", page_num="1"):
  
     # If there was no query searched for, flash and go to home
     if query == "-1":
-        flash(
-            "You didn't search for anything! You have been redirected to the home page.", 'redirect')
+        flash("You didn't search for anything! You have been redirected to the home page.", 'redirect')
         return ""
 
     # Initialize the Mongo client
@@ -109,7 +113,7 @@ def browse(query="water", searchType="name", page_num="1"):
     elif searchType == 'inchi':
         searchType = 'inchikey'
         query = query.upper()
-        if query in redirect_table.keys():
+        if query in list(redirect_table.keys()):
             query = redirect_table[query]
     cursor = db.molecules.find({str(searchType): str(query)}).limit(500)
 
@@ -135,7 +139,7 @@ def browse(query="water", searchType="name", page_num="1"):
 
     # Find lightest molecule to normalize mass-based search
     temp = sorted(
-        map(lambda x: x["formula"], results), key=lambda x: formula2mass(x))
+        [x["formula"] for x in results], key=lambda x: formula2mass(x))
     lightest = formula2mass(temp[0]) if temp else 1e12
 
     results = sorted(results, key=lambda x: similar(
@@ -185,13 +189,13 @@ def browse(query="water", searchType="name", page_num="1"):
     min_html = html_minify(rendered_html.encode('utf8'))
     return min_html
 
-import cProfile, pstats, StringIO
+import cProfile, pstats, io
 pr = cProfile.Profile()
 pr.enable()
 browse("acid", "name", "1")
 pr.disable()
-s = StringIO.StringIO()
+s = io.StringIO()
 sortby = 'tottime'
 ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
 ps.print_stats()
-print s.getvalue()
+print(s.getvalue())

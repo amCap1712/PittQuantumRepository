@@ -1,15 +1,14 @@
 from pymongo import MongoClient
-from pprint import pprint
 
 client = MongoClient()
 db = client.test
 
-print "# Properties Documents: " + str(db.properties.count())
-print "# Molecule Documents: " + str(db.molecules.count())
+print("# Properties Documents: " + str(db.properties.count_documents(filter={})))
+print("# Molecule Documents: " + str(db.molecules.count_documents(filter={})))
 
-print "Deleting"
+print("Deleting")
 db.properties.drop()
 db.molecules.drop()
 
-print "# Properties Documents: " + str(db.properties.count())
-print "# Molecule Documents: " + str(db.molecules.count())
+print("# Properties Documents: " + str(db.properties.count_documents(filter={})))
+print("# Molecule Documents: " + str(db.molecules.count_documents(filter={})))

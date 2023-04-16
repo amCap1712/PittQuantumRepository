@@ -1,14 +1,14 @@
 #!./venv/bin/python
 
 # Flask specific imports
-from flask import render_template, url_for, redirect, flash, send_from_directory, jsonify, request, Markup, Response, make_response
-from flask.ext.cache import Cache
+from flask import render_template, url_for, redirect, flash, send_from_directory, jsonify, request, Markup, Response
+from flask_caching import Cache
 
-#HTML Minifier
+# HTML Minifier
 from htmlmin.minify import html_minify
 
 # mandrill emailing
-from flask.ext.mandrill import Mandrill
+from flask_mandrill import Mandrill
 
 # MongoDB specific imports
 from pymongo import MongoClient
@@ -16,7 +16,7 @@ from pymongo import MongoClient
 # PQR specific imports
 from pqr import pqr
 
-from settings import APP_JSON, APP_MOL2, APP_ARTICLES
+from .settings import APP_JSON, APP_MOL2, APP_ARTICLES
 
 # Python library imports
 import os
@@ -40,32 +40,33 @@ pqr.debug = True
 last_updated_wm = datetime.datetime.strptime('Aug 7 1996', '%b %d %Y').date()
 
 Masses = dict(H=1.01, He=4.00, Li=6.94, Be=9.01, B=10.81, C=12.01,
-	  N=14.01, O=16.00, F=19.00, Ne=20.18, Na=22.99, Mg=24.31,
-	  Al=26.98, Si=28.09, P=30.97, S=32.07, Cl=35.45, Ar=39.95,
-	  K=39.10, Ca=40.08, Sc=44.96, Ti=47.87, V=50.94, Cr=52.00,
-	  Mn=54.94, Fe=55.85, Co=58.93, Ni=58.69, Cu=63.55, Zn=65.39,
-	  Ga=69.72, Ge=72.61, As=74.92, Se=78.96, Br=79.90, Kr=83.80,
-	  Rb=85.47, Sr=87.62, Y=88.91, Zr=91.22, Nb=92.91, Mo=95.94,
-	  Tc=98.00, Ru=101.07, Rh=102.91, Pd=106.42, Ag=107.87,
-	  Cd=112.41, In=114.82, Sn=118.71, Sb=121.76, Te=127.60,
-	  I=126.90, Xe=131.29, Cs=132.91, Ba=137.33, La=138.91,
-	  Ce=140.12, Pr=140.91, Nd=144.24, Pm=145.00, Sm=150.36,
-	  Eu=151.96, Gd=157.25, Tb=158.93, Dy=162.50, Ho=164.93,
-	  Er=167.26, Tm=168.93, Yb=173.04, Lu=174.97, Hf=178.49,
-	  Ta=180.95, W=183.84, Re=186.21, Os=190.23, Ir=192.22,
-	  Pt=195.08, Au=196.97, Hg=200.59, Tl=204.38, Pb=207.2,
-	  Bi=208.98, Po=209.00, At=210.00, Rn=222.00, Fr=223.00,
-	  Ra=226.00, Ac=227.00, Th=232.04, Pa=231.04, U=238.03,
-	  Np=237.00, Pu=244.00, Am=243.00, Cm=247.00, Bk=247.00,
-	  Cf=251.00, Es=252.00, Fm=257.00, Md=258.00, No=259.00,
-	  Lr=262.00, Rf=261.00, Db=262.00, Sg=266.00, Bh=264.00,
-	  Hs=269.00, Mt=268.00)
+              N=14.01, O=16.00, F=19.00, Ne=20.18, Na=22.99, Mg=24.31,
+              Al=26.98, Si=28.09, P=30.97, S=32.07, Cl=35.45, Ar=39.95,
+              K=39.10, Ca=40.08, Sc=44.96, Ti=47.87, V=50.94, Cr=52.00,
+              Mn=54.94, Fe=55.85, Co=58.93, Ni=58.69, Cu=63.55, Zn=65.39,
+              Ga=69.72, Ge=72.61, As=74.92, Se=78.96, Br=79.90, Kr=83.80,
+              Rb=85.47, Sr=87.62, Y=88.91, Zr=91.22, Nb=92.91, Mo=95.94,
+              Tc=98.00, Ru=101.07, Rh=102.91, Pd=106.42, Ag=107.87,
+              Cd=112.41, In=114.82, Sn=118.71, Sb=121.76, Te=127.60,
+              I=126.90, Xe=131.29, Cs=132.91, Ba=137.33, La=138.91,
+              Ce=140.12, Pr=140.91, Nd=144.24, Pm=145.00, Sm=150.36,
+              Eu=151.96, Gd=157.25, Tb=158.93, Dy=162.50, Ho=164.93,
+              Er=167.26, Tm=168.93, Yb=173.04, Lu=174.97, Hf=178.49,
+              Ta=180.95, W=183.84, Re=186.21, Os=190.23, Ir=192.22,
+              Pt=195.08, Au=196.97, Hg=200.59, Tl=204.38, Pb=207.2,
+              Bi=208.98, Po=209.00, At=210.00, Rn=222.00, Fr=223.00,
+              Ra=226.00, Ac=227.00, Th=232.04, Pa=231.04, U=238.03,
+              Np=237.00, Pu=244.00, Am=243.00, Cm=247.00, Bk=247.00,
+              Cf=251.00, Es=252.00, Fm=257.00, Md=258.00, No=259.00,
+              Lr=262.00, Rf=261.00, Db=262.00, Sg=266.00, Bh=264.00,
+              Hs=269.00, Mt=268.00)
+
 
 ##########################################################################
 
 
-#@pqr.before_request
-#def beforeRequest():
+# @pqr.before_request
+# def beforeRequest():
 #    if 'https://' not in request.url:
 #        return redirect(request.url.replace('http://', 'https://'))
 
@@ -79,23 +80,23 @@ def index():
 
     page = {'id': "page-home"}
     articles = [os.path.splitext(article)[0]
-                       for article in next(os.walk(APP_ARTICLES))[2]]
+                for article in next(os.walk(APP_ARTICLES))[2]]
     new_articles = sorted(get_new_articles(articles, 14), reverse=True)
     articles = sorted(list(set(articles) - set(new_articles)), reverse=True)
 
     # Merge articles with formatted titles
-    titles = map(lambda x: x.split('-'), articles)
-    titles = map(lambda x: "{0} ({1})".format(' '.join(x[3:]), x[2] + ' ' + x[1] + ' ' + x[0]), titles)
-    articles = zip(articles, titles)
+    titles = [x.split('-') for x in articles]
+    titles = ["{0} ({1})".format(' '.join(x[3:]), x[2] + ' ' + x[1] + ' ' + x[0]) for x in titles]
+    articles = list(zip(articles, titles))
 
     # Do the same thing with new articles
-    titles = map(lambda x: x.split('-'), new_articles)
-    titles = map(lambda x: "{0} ({1})".format(' '.join(x[3:]), x[2] + ' ' + x[1] + ' ' + x[0]), titles)
-    new_articles = zip(new_articles, titles)
+    titles = [x.split('-') for x in new_articles]
+    titles = ["{0} ({1})".format(' '.join(x[3:]), x[2] + ' ' + x[1] + ' ' + x[0]) for x in titles]
+    new_articles = list(zip(new_articles, titles))
 
     today = datetime.date.today()
     idx = (today.weekday() + 1) % 7
-    sun = today - datetime.timedelta(7+idx)
+    sun = today - datetime.timedelta(7 + idx)
 
     if last_updated_wm < sun:
         weekly_mol = get_weekly_molecule_list()[-1].split(',')
@@ -105,9 +106,11 @@ def index():
 
     week_mol = (MOLECULE_OF_THE_WEEK[:2] + "/" + MOLECULE_OF_THE_WEEK)
 
-    rendered_html = render_template("home.html", page=page, amount_mol=amount_mol, articles=articles, new_articles=new_articles, week_mol=week_mol, week_mol_name=WEEKLY_MOL_NAME)
+    rendered_html = render_template("home.html", page=page, amount_mol=amount_mol, articles=articles,
+                                    new_articles=new_articles, week_mol=week_mol, week_mol_name=WEEKLY_MOL_NAME)
     min_html = html_minify(rendered_html.encode('utf8'))
     return min_html
+
 
 ##########################################################################
 @pqr.route('/mol/<key>', strict_slashes=False)
@@ -120,7 +123,7 @@ def molecule(key="-1"):
     # Checks to see if the key passed in exists in the redirect table
     # If it does, it redirects to this same route, except with the proper key
     # It also flashes a message that shows the redirection
-    if key in redirect_table.keys():
+    if key in list(redirect_table.keys()):
         flash("Redirected! " + str(key) +
               " is actually the same as " + str(redirect_table[key]), 'redirect')
         return redirect(url_for('molecule', key=redirect_table[key]))
@@ -139,15 +142,18 @@ def molecule(key="-1"):
     except IOError:
         # If we don't have the key, flash
         flash(
-            "You entered a molecule that didn't exist, so you've been redirected to the molecule of the week!", 'redirect')
+            "You entered a molecule that didn't exist, so you've been redirected to the molecule of the week!",
+            'redirect')
         return redirect(url_for('molecule', key=MOLECULE_OF_THE_WEEK))
 
-    meta_description = "You are viewing an interactive 3D depiction of the molecule " + json_dict["name"] + " (" + json_dict["formula"] + ") from the PQR."
+    meta_description = "You are viewing an interactive 3D depiction of the molecule " + json_dict["name"] + " (" + \
+                       json_dict["formula"] + ") from the PQR."
 
     # return the view
     return render_template("molecule.html", page=page, jsonDict=json_dict, metaDescription=meta_description)
-    #min_html = html_minify(rendered_html.encode('utf8'))
-    #return min_html
+    # min_html = html_minify(rendered_html.encode('utf8'))
+    # return min_html
+
 
 ##########################################################################
 @pqr.route('/news', strict_slashes=False)
@@ -158,7 +164,7 @@ def news(title="-1"):
 
     try:
         # Loads the JSON file relevant to the InChI key requested
-        with open(os.path.join(APP_ARTICLES,  title + '.md'), 'r') as f:
+        with open(os.path.join(APP_ARTICLES, title + '.md'), 'r') as f:
             opened = f.read().strip()
             html = markdown.markdown(opened)
             f.close()
@@ -174,14 +180,14 @@ def news(title="-1"):
     min_html = html_minify(rendered_html.encode('utf8'))
     return min_html
 
+
 ##########################################################################
 
 
 @pqr.route('/browse', strict_slashes=False)
 @pqr.route('/browse/<page_num>', strict_slashes=False)
-#@cache.memoize(timeout=86400)
+# @cache.memoize(timeout=86400)
 def browse(page_num="-1"):
-
     # Get the page number that is passed in
     # If negative, make it positive
     # If no page number is passed in, assume it is 1
@@ -199,8 +205,7 @@ def browse(page_num="-1"):
 
     # If there was no query searched for, flash and go to home
     if query == "-1":
-        flash(
-            "You didn't search for anything! You have been redirected to the home page.", 'redirect')
+        flash("You didn't search for anything! You have been redirected to the home page.", 'redirect')
         return redirect(url_for('index'))
 
     # Initialize the Mongo client
@@ -219,7 +224,7 @@ def browse(page_num="-1"):
     elif searchType == 'inchi':
         searchType = 'inchikey'
         query = query.upper()
-        if query in redirect_table.keys():
+        if query in list(redirect_table.keys()):
             query = redirect_table[query]
     cursor = db.molecules.find({str(searchType): str(query)}).limit(500)
 
@@ -230,7 +235,7 @@ def browse(page_num="-1"):
         results.append(i)
 
     if len(results) == 0:
-        cursor = db.molecules.find({"$text": {"$search": str(query)}}) 
+        cursor = db.molecules.find({"$text": {"$search": str(query)}})
         for i in cursor:
             i["mol2url"] = i["inchikey"][:2] + "/" + i["inchikey"]
             try:
@@ -238,14 +243,14 @@ def browse(page_num="-1"):
                 results.append(i)
             except:
                 if len(list(cursor)) == 0:
-                    rendered_html = render_template("browse.html", page=page, results=[], query=query, searchType=searchType, typenum_pages=1, active=active, total_results=0)
+                    rendered_html = render_template("browse.html", page=page_num, results=[], query=query,
+                                                    searchType=searchType, typenum_pages=1, active=active,
+                                                    total_results=0)
                     min_html = html_minify(rendered_html.encode('utf8'))
                     return min_html
 
-
     # Find lightest molecule to normalize mass-based search
-    temp = sorted(
-        map(lambda x: x["formula"], results), key=lambda x: formula2mass(x))
+    temp = sorted([x["formula"] for x in results], key=lambda x: formula2mass(x))
     lightest = formula2mass(temp[0]) if temp else 1e12
 
     results = sorted(results, key=lambda x: similar(
@@ -297,9 +302,11 @@ def browse(page_num="-1"):
     if request.args.get('ajax'):
         return render_template("browse_ajax.html", results=results)
     else:
-        rendered_html = render_template("browse.html", page=page, results=results, query=query, searchType=searchType, typenum_pages=num_pages, active=active, total_results=total_results)
+        rendered_html = render_template("browse.html", page=page, results=results, query=query, searchType=searchType,
+                                        typenum_pages=num_pages, active=active, total_results=total_results)
         min_html = html_minify(rendered_html.encode('utf8'))
         return min_html
+
 
 #################################################
 
@@ -312,6 +319,7 @@ def searchSuggestions():
     else:
         return Response(json.dumps([]), mimetype='application/json')
 
+
 #################################################
 
 @pqr.route('/api/weekly', strict_slashes=False)
@@ -323,7 +331,6 @@ def weekly_molAPI():
 
 @pqr.route('/api/browse/<query>/<searchType>', strict_slashes=False)
 def browseAPI(query, searchType):
-
     # Set the query string
     query = query.lower()
 
@@ -354,7 +361,7 @@ def browseAPI(query, searchType):
         results.append(i)
 
     if len(results) == 0:
-        cursor = db.molecules.find({"$text": {"$search": str(query)}}) 
+        cursor = db.molecules.find({"$text": {"$search": str(query)}})
         for i in cursor:
             i["mol2url"] = i["inchikey"][:2] + "/" + i["inchikey"]
             try:
@@ -400,10 +407,10 @@ def getStatus():
 
     return jsonify(stuff_to_print)
 
+
 @pqr.route('/api/json/<key>', strict_slashes=False)
 @cache.cached(timeout=86400)
 def jsonAPI(key):
-
     # Open the relevant JSON file
     with open(os.path.join(APP_JSON, key[:2] + '/' + key + '.json')) as j:
         json_dict = json.load(j)
@@ -415,22 +422,21 @@ def jsonAPI(key):
 @pqr.route('/api/mol/<key>', strict_slashes=False)
 @cache.cached(timeout=86400)
 def molAPI(key):
-
     mol2 = []
     # Open the relevant mol2 file
     f = open(os.path.join(APP_MOL2, key[:2] + '/' + key + '.mol2'))
 
     # Return a MOL2 request with the proper MIME type
-    response =  Response(f.read().strip(), mimetype='chemical/x-mol2')
+    response = Response(f.read().strip(), mimetype='chemical/x-mol2')
     response.headers['Content-Disposition'] = 'attachment; filename=%s' % (key + '.mol2')
     return response
+
 
 # Return a webpage with a list of all the InChIKeys
 
 
 @pqr.route('/api/inchikeys', strict_slashes=False)
 def inchiAPI():
-
     root = APP_JSON
     file_list = []
 
@@ -439,6 +445,8 @@ def inchiAPI():
             file_list.append(fn.replace('.json', ''))
 
     return Response("\n".join(file_list), mimetype='text/plain')
+
+
 ##########################################################################
 
 
@@ -448,15 +456,16 @@ def contact():
     page = {'id': "page-contact"}
 
     if request.method == 'GET':
-            rendered_html = render_template("contact.html", page=page)
-            min_html = html_minify(rendered_html.encode('utf8'))
-            return min_html
+        rendered_html = render_template("contact.html", page=page)
+        min_html = html_minify(rendered_html.encode('utf8'))
+        return min_html
     else:
-        if(validate_contact_us(request.form)):
+        if (validate_contact_us(request.form)):
             send_email(request.form)
             rendered_html = render_template("contact.html", page=page)
             min_html = html_minify(rendered_html.encode('utf8'))
             return min_html
+
 
 ##########################################################################
 @pqr.route('/sitemap/<index>', methods=['GET'], strict_slashes=False)
@@ -469,10 +478,11 @@ def sitemap(index):
         return render_template('sitemap.html', pages=pages, inchi=False)
     else:
         list_of_keys = getINCHIkeys(index)
-        if(list_of_keys):
+        if (list_of_keys):
             return render_template('sitemap.html', pages=list_of_keys, inchi=True)
         else:
             return ""
+
 
 ##########################################################################
 @pqr.route('/motw', strict_slashes=False)
@@ -483,10 +493,11 @@ def molecule_of_the_week():
     for week_molecule in get_weekly_molecule_list():
         week_molecules.append(week_molecule.split(','))
 
-    print week_molecules
+    print(week_molecules)
     rendered_html = render_template('molecule-of-the-week.html', page=page, week_molecules=week_molecules)
     min_html = html_minify(rendered_html.encode('utf8'))
     return min_html
+
 
 ##########################################################################
 
@@ -495,6 +506,8 @@ def molecule_of_the_week():
 def sitemapindex():
     directories = getINCHIfolders()
     return render_template('sitemapIndex.html', moldirs=directories)
+
+
 ##########################################################################
 
 # Properly handle the favicon
@@ -503,11 +516,13 @@ def favicon():
     return send_from_directory(os.path.join(pqr.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+
 # SEO
 @pqr.route('/BingSiteAuth.xml', strict_slashes=False)
 def BingSiteAuth():
     return send_from_directory(os.path.join(pqr.root_path, 'static'),
                                'BingSiteAuth.xml', mimetype='text/xml')
+
 
 @pqr.route('/robots.txt', strict_slashes=False)
 def RobotsTxt():
@@ -520,30 +535,30 @@ def RobotsTxt():
 
 @pqr.route('/3spooky5me')
 def clear_cache():
-    if(not pqr.debug):
+    if not pqr.debug:
         return "You're not supposed to be here o_0"
     global cache
     cache.clear()
     cache = Cache(config={'CACHE_TYPE': 'null'})
     cache.init_app(pqr)
-    print cache.config
-    print pqr.debug
+    print(cache.config)
+    print(pqr.debug)
     flash('Cache cleared')
     return redirect(url_for('molecule', key=MOLECULE_OF_THE_WEEK))
+
 
 ##########################################################################
 @pqr.route('/502/', strict_slashes=False)
 def fiveohtwo():
-  page = {'id': "page-error"}
-  rendered_html = render_template("502.html", page=page, amount_mol=amount_mol)
-  min_html = html_minify(rendered_html.encode('utf8'))
-  return min_html
-
+    page = {'id': "page-error"}
+    rendered_html = render_template("502.html", page=page, amount_mol=amount_mol)
+    min_html = html_minify(rendered_html.encode('utf8'))
+    return min_html
 
 
 @pqr.errorhandler(404)
 def page_not_found(e):
-    #flash("Page not found", 404)
+    # flash("Page not found", 404)
     return redirect(url_for('index'))
 
 
@@ -551,6 +566,8 @@ def page_not_found(e):
 def page_not_found(e):
     flash("Page not found", 500)
     return redirect(url_for('index'))
+
+
 ##########################################################################
 
 
@@ -558,15 +575,16 @@ def page_not_found(e):
 def chunks(l, n):
     """ Yield successive n-sized chunks from l.
     """
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
+
 
 # Validate the contact us form
 
 
 def validate_contact_us(form):
-    if(form['name'] and form['email'] and form['verify_email'] and form['subject'] and form['message']):
-        if(form['email'] != form['verify_email']):
+    if form['name'] and form['email'] and form['verify_email'] and form['subject'] and form['message']:
+        if form['email'] != form['verify_email']:
             flash("Emails don't match!", 'error')
             return False
         else:
@@ -574,6 +592,7 @@ def validate_contact_us(form):
     else:
         flash("Please make sure everything has been filled out!", "error")
         return False
+
 
 # Send an email using mandrill
 
@@ -586,7 +605,7 @@ def send_email(form):
         to=[{'email': pqr.config['DEFAULT_EMAIL']},
             {'email': 'jjr76@pitt.edu'}],
         text=form['subject'] + "\n" + "From: " +
-        form['email'] + "\n" + form['message'],
+             form['email'] + "\n" + form['message'],
         html=render_template("email/contact.html", date=datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
                              name=form['name'], email=form['email'], subject=form['subject'], message=form['message']),
     )
@@ -595,7 +614,7 @@ def send_email(form):
 
 def similar(x, f, m0, query):
     if isinstance(x, list):
-        score_list = map(lambda z: similar(z, f, m0, query), x)
+        score_list = [similar(z, f, m0, query) for z in x]
         return sum(score_list)
     else:
         # if x in query:
@@ -603,10 +622,11 @@ def similar(x, f, m0, query):
             if query in x:
                 score = 10 + ratio(x.encode('utf8', 'ignore'), query.encode('utf8', 'ignore')) + m0 / formula2mass(f)
             else:
-	            score = ratio(x.encode('utf8', 'ignore'), query.encode('utf8', 'ignore')) + m0 / formula2mass(f)
+                score = ratio(x.encode('utf8', 'ignore'), query.encode('utf8', 'ignore')) + m0 / formula2mass(f)
         except ZeroDivisionError:
             score = 100
     return score
+
 
 def formula2mass(f):
     s = re.findall('([A-Z][a-z]?)([0-9]*)', f)
@@ -616,12 +636,13 @@ def formula2mass(f):
         compoundweight += Masses[element] * count
     return compoundweight
 
+
 # Get a list of inchi keys for a specific folder (i.e folder AA)
 def getINCHIkeys(folder):
     root = APP_JSON
     file_list = []
     path = root + folder.upper()
-    if(os.path.isdir(path)):
+    if (os.path.isdir(path)):
         for root, dirs, files in os.walk(path):
             for fn in files:
                 file_list.append(fn.replace('.json', ''))
@@ -633,20 +654,22 @@ def getINCHIkeys(folder):
 def getINCHIfolders():
     return os.listdir(APP_JSON)
 
-#Create a new list of 'new' articles based on how many days passed
+
+# Create a new list of 'new' articles based on how many days passed
 def get_new_articles(articles, days):
     new_articles = []
     for article in articles:
         date = article[:10]
         try:
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
-            if dt > datetime.datetime.now()-datetime.timedelta(days=days):
+            if dt > datetime.datetime.now() - datetime.timedelta(days=days):
                 new_articles.append(article)
         except ValueError:
-            print "Invalid Date Format"
+            print("Invalid Date Format")
     return new_articles
 
-#Get a list of the past weekly molecules
+
+# Get a list of the past weekly molecules
 def get_weekly_molecule_list():
     # Gets todays date, then rewinds it to the last Sunday
     # (if today is Sunday it sticks with today)
@@ -671,7 +694,8 @@ def get_weekly_molecule_list():
                 continue
 
             # inchikey, title, date
-            last = tokens[1] + "," + tokens[2].title() + "," + tokens[0][0:4] + '-' + tokens[0][4:6] + '-' + tokens[0][6:]
+            last = tokens[1] + "," + tokens[2].title() + "," + tokens[0][0:4] + '-' + tokens[0][4:6] + '-' + tokens[0][
+                                                                                                             6:]
             if tokens[0] <= datetime.datetime.isoformat(datetime.datetime.now()).replace('-', ''):
                 return_list.append(last)
             else:  # We are now past the current date, don't show them yet
@@ -688,21 +712,23 @@ def get_json_data_file(key_first_two, key):
         # If we don't have the key, flash
         return False
 
+
 # Return suggestions for autocomplete search
 # db.molecules.find( { name: { $regex: /^meth/i } } )
 def get_suggestions(partial):
     client = MongoClient()
     db = client.test
-    cursor = db.molecules.find({'name': { '$regex': str(partial) }}).limit(10)
+    cursor = db.molecules.find({'name': {'$regex': str(partial)}}).limit(10)
     results = []
 
     for i in cursor:
         item = {}
-        item['name'] =  i["name"]
-        item['inchikey'] =  i["inchikey"]
-        item['formula'] =  i["formula"]
+        item['name'] = i["name"]
+        item['inchikey'] = i["inchikey"]
+        item['formula'] = i["formula"]
         results.append(item)
     return results
+
 
 if __name__ == '__main__':
     pqr.run()
