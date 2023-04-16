@@ -41,7 +41,7 @@ The first time you run the server, or any time you update the data in the folder
 - `gulp test`: runs tape testing
 
 ### Install
-To install the Node modules run `npm install` (assuming node is installed on your local machine). See `package.json` to see what will be installed. To install the Bower components run `bower install` (assuming the bower npm package is install on your local machine). See `bower.json` to see what will be installed.
+To install the Node modules run `npm install` (assuming node is installed on your local machine). See `package.json` to see what will be installed.
 
 ## API Calls
 

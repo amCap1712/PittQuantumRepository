@@ -3,6 +3,7 @@ import pqr
 import unittest
 import tempfile
 
+
 class PQRTestCase(unittest.TestCase):
 
     mol = "ULGZDMOVFRHVEP-RWJQBGPGSA-N"
@@ -38,6 +39,7 @@ class PQRTestCase(unittest.TestCase):
         rv = self.app.get('/api/status/')
         assert rv.headers['content-type'] == 'application/json'
         print '### Status API endpoint is OK'
+
 
 if __name__ == '__main__':
     unittest.main()

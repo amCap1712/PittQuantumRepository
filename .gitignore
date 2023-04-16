@@ -82,9 +82,6 @@ pqr/static/data/**
 #Node Modules
 node_modules/
 
-#Bower Modules
-bower_components
-
 #Vagrant
 .vagrant/
 
