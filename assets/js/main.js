@@ -20,7 +20,7 @@ require('browsernizr/test/webgl');
 require('browsernizr/test/storage/localstorage');
 require('browsernizr/test/css/animations');
 
-let //$ = require('jquery'),
+let $ = require('jquery'),
     modernizr = require('browsernizr'),
     bindevents = require('./bindevents'),
     autocomplete = require('./autocomplete'),
